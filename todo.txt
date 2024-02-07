@@ -1,0 +1,1 @@
+send_telegram_notification() #right now this just sends to my bot, but i dont get a notification on my phone so i need to have the bot reply as well
