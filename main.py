@@ -13,9 +13,13 @@ import os
 from flask import jsonify
 import dropbox_image_uploader
 import my_google_secret
+import json
+
+#To update the code on the cloud
+#gcloud functions deploy lemmy_auto_icon   --runtime python310   --trigger-http   --allow-unauthenticated   --entry-point=lemmy_auto_icon
 
 
-print(os.environ.get('OPENAI_API_KEY'))
+#print(os.environ.get('OPENAI_API_KEY'))
 
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
@@ -32,7 +36,7 @@ def get_highest_post(community_id, excluded_title="Bioacoustics Resources"):
     lemmy_instance = Lemmy("https://lemmy.world")
 
     # Fetch the hottest posts from the community
-    posts_data = lemmy_instance.post.list(community_id=community_id, sort='Active', page=1, limit=5)
+    posts_data = lemmy_instance.post.list(community_id=community_id, sort='Hot', page=1, limit=5)
 
     if 'posts' in posts_data:
         # Skip the first post and get the second post
@@ -54,7 +58,7 @@ def generate_funny_image_prompt(post_title):
             #model="gpt-3.5-turbo-0613",
             messages=[
                 {"role": "system", "content": "You are an AI Art prompt creator."},
-                {"role": "user", "content": "From the top of your intelligence, create an AI Art prompt to be used as a small clever and humorous icon to represent the following article. Respond with only the prompt. Here is the title of the article: "+post_title+"\nPrompt: "}
+                {"role": "user", "content": "Create an witty, comedic, and playfully disrespectful/offesive AI Art prompt that will be to be used to make a single image based on an article title. The image will have two uses, it will be used as a small icon and the middle section of it will be used as a website banner. Remember that this will be used as a small icon, so it should be relatively simple and identifiable even at a very small size. It is absolutely crucial that the image be a slight mockery of the following article title, and should come from a place of playful ridicule. Here is the article title: "+post_title+"\nRespond with only the clever and thoughtful prompt that you are submitting. PROMPT: "}
             ],
             max_tokens=60
         )
@@ -113,12 +117,59 @@ def update_lemmy_art(icon_or_banner, icon_url):
             'auth': auth_token  # Include the auth token in the request body
         }
     # Making the PUT request
-    response = requests.put('https://lemmy.world/api/v3/community', json=data)
+    #response = requests.put('https://lemmy.world/api/v3/community', json=data)
+
+    headers = {
+        'User-Agent': 'Your User Agent String',
+        #'Accept-Encoding': 'gzip, deflate, br',
+        'Authorization': f'Bearer {auth_token}',
+        'Content-Type': 'application/json',  # Specify content type as JSON
+    }
+
+    # Make the PUT request
+    response = requests.put('https://lemmy.world/api/v3/community', json=data, headers=headers)
+
     # Check response
     if response.status_code == 200:
         print(f"{icon_or_banner} updated successfully!")
     else:
         print(f"Failed to update {icon_or_banner}.")
+
+def comment_on_lemmy_post(comment, post_id):
+    auth_token = get_auth_token()
+    payload = {
+        "content": comment,
+        "post_id": post_id,
+        'auth': auth_token,
+        "parent_id": 0,
+        "language_id": 0
+    }    
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json"
+    }
+    #response = requests.post("https://lemmy.world/api/v3/comment", json=payload, headers=headers)
+
+    headers = {
+        'User-Agent': 'Your User Agent String',
+        #'Accept-Encoding': 'gzip, deflate, br',
+        'Authorization': f'Bearer {auth_token}',
+        'Content-Type': 'application/json',  # Specify content type as JSON
+    }
+
+    # Make the POST request
+    response = requests.post("https://lemmy.world/api/v3/comment", json=payload, headers=headers)
+
+
+    # Making the PUT request
+    #response = requests.put('https://lemmy.world/api/v3/community', json=data)
+    # Check response
+    print(response)
+    print(response.text)
+    if response.status_code == 200:
+        print(f"comment made successfully!")
+    else:
+        print(f"Failed to comment.")
 
 def set_image_as_icon(image_url, filename):
     image_url_dropbox = dropbox_image_uploader.upload_image(image_url, filename)
@@ -126,6 +177,7 @@ def set_image_as_icon(image_url, filename):
     update_lemmy_art("icon", image_url_dropbox)
     update_lemmy_art("banner", image_url_dropbox)
     print("icon updated successfully!")
+    return image_url_dropbox
 
 async def send_telegram_alert(message):
     bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
@@ -133,31 +185,83 @@ async def send_telegram_alert(message):
     bot = Bot(token=bot_token)
     await bot.send_message(chat_id=chat_id, text=message)
 
-async def check_and_update_top_post_async():
-    # Attempt to download the current top post title from Google Drive
-    current_post_title_file_id = '1dpzV4S9R-Fh1kKKJd51Pp0UlfZzAocIb'
-    request = service.files().get_media(fileId=current_post_title_file_id)
+def read_gdrive_file(file_id):
+    request = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
     downloader = MediaIoBaseDownload(fh, request)
     done = False
     while done is False:
         status, done = downloader.next_chunk()
     fh.seek(0)
-    current_top_post = fh.read().decode('utf-8')    
-    latest_top_post = get_highest_post(community_id)[1]
+    return fh.read().decode('utf-8')
+
+def write_gdrive_file(file_id, content):
+    fh = io.BytesIO(content.encode('utf-8'))
+    media = MediaIoBaseUpload(fh, mimetype='text/plain')
+    service.files().update(fileId=file_id, media_body=media).execute()
+
+def get_unread_message_count_lemmy():
+    auth_token = get_auth_token()    
+    #response = requests.get(f"https://lemmy.world/api/v3/user/unread_count?auth={auth_token}")
+    headers = {
+        'User-Agent': 'Your User Agent String',
+        #'Accept-Encoding': 'gzip, deflate, br',  # Sample additional header
+        'Authorization': f'Bearer {auth_token}',  # Assuming Bearer token auth
+    }
+    response = requests.get("https://lemmy.world/api/v3/user/unread_count", headers=headers)
+    total_count = 0
+    print(response)
+    print(response.text)
+    
+    if response.status_code == 200:
+        response_json = json.loads(response.text)
+        total_count = response_json["replies"] + response_json["mentions"] + response_json["private_messages"]
+        print(f"there are {total_count} notifications")
+    else:
+        print(f"Failed to comment.")
+    return total_count
+
+async def check_and_update_top_post_async():
+    # Attempt to download the current top post title from Google Drive
+    current_post_title_file_id = '1dpzV4S9R-Fh1kKKJd51Pp0UlfZzAocIb'
+    current_top_post = read_gdrive_file(current_post_title_file_id)
+    latest_top_post_id, latest_top_post = get_highest_post(community_id)
     print('latest_top_post:', latest_top_post)
     if current_top_post != latest_top_post:
         print("Top post has changed. Updating Google Drive and executing response.")
         funny_image_prompt = generate_funny_image_prompt(latest_top_post)
         print('funny_image_prompt:', funny_image_prompt)
         image_url, filename = generate_image(funny_image_prompt)        
-        set_image_as_icon(image_url, filename)
+        dropbox_url = set_image_as_icon(image_url, filename)
         MESSAGE = 'The Lemmy image has been updated!'
         await send_telegram_alert(MESSAGE)
         print("New images set.")
-        fh = io.BytesIO(latest_top_post.encode('utf-8'))
-        media = MediaIoBaseUpload(fh, mimetype='text/plain')
-        service.files().update(fileId=current_post_title_file_id, media_body=media).execute()
+        write_gdrive_file(current_post_title_file_id, latest_top_post)
+        documenting_file_id = '10iqfoB0jHEhb8S3a_21mSkBxx6VfTP_v'
+        documenting_content = read_gdrive_file(documenting_file_id)
+        documenting_json = json.loads(documenting_content)
+        documenting_json[datetime.now().strftime("%Y-%m-%d %H:%M:%S")] = {"post_title": latest_top_post, "image_url": dropbox_url}
+        documenting_content = json.dumps(documenting_json)
+        documentation_post_id = 7637523
+        comment = f'''[{latest_top_post}](https://lemmy.world/post/{latest_top_post_id})
+
+![]({dropbox_url})'''
+        comment_on_lemmy_post(comment, documentation_post_id)
+
+        write_gdrive_file(documenting_file_id, documenting_content)
+
+    #check for new unread messages
+    unread_count_file_id = "1zuLGt8A0GTWnBn-omeA_ki_XXSgMVgdU"
+    unread_message_count_from_file = read_gdrive_file(unread_count_file_id)
+    unread_message_count_from_lemmy = get_unread_message_count_lemmy()
+    print('unread_message_count_from_file:', unread_message_count_from_file)
+    print('unread_message_count_from_lemmy:', unread_message_count_from_lemmy)
+    if int(unread_message_count_from_file) < int(unread_message_count_from_lemmy):
+        write_gdrive_file(unread_count_file_id, str(unread_message_count_from_lemmy))
+        MESSAGE = f'You have {unread_message_count_from_lemmy} Lemmy notifications!'
+        await send_telegram_alert(MESSAGE)
+    if int(unread_message_count_from_file) > int(unread_message_count_from_lemmy):
+        write_gdrive_file(unread_count_file_id, str(unread_message_count_from_lemmy))
 
 async def main(request=None):    
     await check_and_update_top_post_async()
@@ -169,14 +273,26 @@ def lemmy_auto_icon(request):
     loop.close()
     return jsonify({'message': 'Function executed successfully'}), 200
 
+# #print(lemmy_auto_icon("request"))
+lemmy_auto_icon("request")
 
-# def lemmy_auto_icon(request):
-#     asyncio.run(main(request))
-#     # Return a simple JSON response indicating success or failure
-#     return jsonify({'message': 'Function executed successfully'}), 200
+# auth_token = get_auth_token()    
+# response = requests.get(f"https://lemmy.world/api/v3/user/unread_count?auth={auth_token}")
+# total_count = 0
+# print(response)
+# print(response.text)
 
-# if __name__ == "__main__":
-#     # Simulate an event loop for local testing
-#     asyncio.run(main("Simulated request"))
-#lemmy_auto_icon("request")
-#asyncio.run(bot_interaction())
+# https://lemmy.world/api/v3/user/unread_count?auth=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDc1MzIiLCJpc3MiOiJsZW1teS53b3JsZCIsImlhdCI6MTcwOTU3MTY1M30.NL9QXezDrW7xT4T42GrGPwvkO1cvB-VYR2bNCCqfgKs
+
+# import requests
+
+# auth_token = get_auth_token()
+# headers = {
+#     'User-Agent': 'Your User Agent String',
+#     #'Accept-Encoding': 'gzip, deflate, br',  # Sample additional header
+#     'Authorization': f'Bearer {auth_token}',  # Assuming Bearer token auth
+# }
+# response = requests.get("https://lemmy.world/api/v3/user/unread_count", headers=headers)
+
+# print(response)
+# print(response.text)
