@@ -1,1 +1,1 @@
-this is made to be  google cloud function. it watches my lemmy community and if the hottest post changes then it reads the title with gpt and makes a dalle image based on the title to be displayed as the icon and banner of the community
+this is made to be a google cloud function. it watches my lemmy community and if the hottest post changes then it reads the title with gpt and makes a dalle image based on the title to be displayed as the icon and banner of the community
