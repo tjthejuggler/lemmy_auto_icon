@@ -1,7 +1,7 @@
 import requests
 import os
 import tempfile
-
+import base64
 # Replace these with your own details
 GITHUB_TOKEN = os.environ.get('GITHUB_ACCESS_TOKEN')
 REPO_NAME = 'lemmy_auto_icon'  # Format: 'username/repo'
