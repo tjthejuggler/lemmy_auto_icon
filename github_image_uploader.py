@@ -25,11 +25,14 @@ def upload_image(image_url, filename):
         }
         with open(temp_file_path, 'rb') as file:
             content = file.read()
-        
+
+        # Correctly encode the content to base64
+        encoded_content = base64.b64encode(content).decode('utf-8')
+
         data = {
             'message': f'Add {filename}',
             'branch': BRANCH_NAME,
-            'content': content.encode('base64').rstrip('\n'),
+            'content': encoded_content,
         }
         
         # Make the request to GitHub API
