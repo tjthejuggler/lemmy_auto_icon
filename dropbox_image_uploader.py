@@ -47,4 +47,4 @@ def upload_image(dalle_url, filename):
         print("Failed to download image from URL")
         return None
 
-# upload_image('/home/lunkwill/projects/ComfyUI/output/The_Distress_Context_of_Social_Calls_Evokes_a_Fear_Response_in_the_Bat_Pipistrel_00006_.png')
+upload_image('/home/lunkwill/projects/ComfyUI/output/The_Distress_Context_of_Social_Calls_Evokes_a_Fear_Response_in_the_Bat_Pipistrel_00006_.png')

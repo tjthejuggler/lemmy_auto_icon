@@ -11,7 +11,9 @@ from get_auth import get_auth_token
 from datetime import datetime
 import os
 from flask import jsonify
-import dropbox_image_uploader
+#import dropbox_image_uploader
+#import gdrive_image_uploader
+import github_image_uploader
 import my_google_secret
 import json
 
@@ -135,6 +137,8 @@ def update_lemmy_art(icon_or_banner, icon_url):
     else:
         print(f"Failed to update {icon_or_banner}.")
 
+update_lemmy_art("icon", 'https://drive.google.com/uc?export=view&id=1anSZHi14bBy3_CLD6MsbOweVnA4ycPO3')
+
 def comment_on_lemmy_post(comment, post_id):
     auth_token = get_auth_token()
     payload = {
@@ -171,13 +175,22 @@ def comment_on_lemmy_post(comment, post_id):
     else:
         print(f"Failed to comment.")
 
+# def set_image_as_icon(image_url, filename):
+#     image_url_dropbox = dropbox_image_uploader.upload_image(image_url, filename)
+#     print("image_url_dropbox", image_url_dropbox)
+#     update_lemmy_art("icon", image_url_dropbox)
+#     update_lemmy_art("banner", image_url_dropbox)
+#     print("icon updated successfully!")
+#     return image_url_dropbox
+
 def set_image_as_icon(image_url, filename):
-    image_url_dropbox = dropbox_image_uploader.upload_image(image_url, filename)
-    print("image_url_dropbox", image_url_dropbox)
-    update_lemmy_art("icon", image_url_dropbox)
-    update_lemmy_art("banner", image_url_dropbox)
+    image_url_gdrive = github_image_uploader.upload_image(image_url, filename)
+    print("image_url_gdrive", image_url_gdrive)
+    update_lemmy_art("icon", image_url_gdrive)
+    update_lemmy_art("banner", image_url_gdrive)
     print("icon updated successfully!")
-    return image_url_dropbox
+    return image_url_gdrive
+
 
 async def send_telegram_alert(message):
     bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
@@ -274,7 +287,7 @@ def lemmy_auto_icon(request):
     return jsonify({'message': 'Function executed successfully'}), 200
 
 # #print(lemmy_auto_icon("request"))
-lemmy_auto_icon("request")
+#lemmy_auto_icon("request")
 
 # auth_token = get_auth_token()    
 # response = requests.get(f"https://lemmy.world/api/v3/user/unread_count?auth={auth_token}")
