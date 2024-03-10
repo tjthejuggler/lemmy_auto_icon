@@ -8,7 +8,7 @@ REPO_NAME = 'lemmy_auto_icon'  # Format: 'username/repo'
 BRANCH_NAME = 'main'  # Or your target branch
 PATH = 'images/'  # Folder path in your repo, make sure it exists or is empty string if not needed
 
-def upload_image_to_github(image_url, filename):
+def upload_image(image_url, filename):
     # Download the image from the given URL
     response = requests.get(image_url)
     if response.status_code == 200:
@@ -49,7 +49,7 @@ def upload_image_to_github(image_url, filename):
         print("Failed to download image from URL")
         return None
 
-# Example usage
-image_url = 'your_image_url_here'
-filename = 'example_image.png'  # Ensure this has the correct file extension
-upload_image_to_github(image_url, filename)
+# # Example usage
+# image_url = 'your_image_url_here'
+# filename = 'example_image.png'  # Ensure this has the correct file extension
+# upload_image_to_github(image_url, filename)
