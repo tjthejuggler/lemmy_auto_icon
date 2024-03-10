@@ -4,7 +4,7 @@ import tempfile
 import base64
 # Replace these with your own details
 GITHUB_TOKEN = os.environ.get('GITHUB_ACCESS_TOKEN')
-REPO_NAME = 'lemmy_auto_icon'  # Format: 'username/repo'
+REPO_NAME = 'tjthejuggler/lemmy_auto_icon'  # Format: 'username/repo'
 BRANCH_NAME = 'main'  # Or your target branch
 PATH = 'images/'  # Folder path in your repo, make sure it exists or is empty string if not needed
 
@@ -53,6 +53,6 @@ def upload_image(image_url, filename):
         return None
 
 # # Example usage
-# image_url = 'your_image_url_here'
+# image_url = 'https://www.openstenoproject.org/plover/images/plover_screenshot.png'
 # filename = 'example_image.png'  # Ensure this has the correct file extension
-# upload_image_to_github(image_url, filename)
+# upload_image(image_url, filename)

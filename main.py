@@ -137,7 +137,8 @@ def update_lemmy_art(icon_or_banner, icon_url):
     else:
         print(f"Failed to update {icon_or_banner}.")
 
-#update_lemmy_art("icon", 'https://drive.google.com/uc?export=view&id=1anSZHi14bBy3_CLD6MsbOweVnA4ycPO3')
+# update_lemmy_art("icon", 'https://github.com/tjthejuggler/lemmy_auto_icon/blob/main/images/lemmy_auto_icon2024-03-10_15-21-16.png?raw=true')
+# update_lemmy_art("banner", 'https://github.com/tjthejuggler/lemmy_auto_icon/blob/main/images/lemmy_auto_icon2024-03-10_15-21-16.png?raw=true')
 
 def comment_on_lemmy_post(comment, post_id):
     auth_token = get_auth_token()
@@ -287,7 +288,7 @@ def lemmy_auto_icon(request):
     return jsonify({'message': 'Function executed successfully'}), 200
 
 # #print(lemmy_auto_icon("request"))
-lemmy_auto_icon("request")
+#lemmy_auto_icon("request")
 
 # auth_token = get_auth_token()    
 # response = requests.get(f"https://lemmy.world/api/v3/user/unread_count?auth={auth_token}")
